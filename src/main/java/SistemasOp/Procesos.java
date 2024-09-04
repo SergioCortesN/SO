@@ -52,7 +52,6 @@ public class Procesos extends Stage
         //tabla
         oblTabla.add(tcNoCliente);
         tbvTabla = new TableView<ObservableList>();
-        tbvTabla.setItems(oblTabla);
 
 
         //pantalla principal
