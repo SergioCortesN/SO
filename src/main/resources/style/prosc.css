@@ -1,10 +1,4 @@
 .root{
-    -fx-background-color: #ffffff;
+    -fx-background-color: #000000;
 }
 
-#font-esp{
-    -fx-border-color: #000000, 2px;
-    -fx-background-color: green;
-    -fx-border-radius: 20px;
-    -fx-background-radius: 20px;
-}
