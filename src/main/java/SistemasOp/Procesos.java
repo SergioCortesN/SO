@@ -14,6 +14,11 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
+import javax.swing.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
+
 public class Procesos extends Stage {
 
     private int contador;
@@ -24,6 +29,12 @@ public class Procesos extends Stage {
     private Button boton1,boton2,boton3,boton4,boton5;
     private Color colorRojo=Color.RED;
     private Color colorVerde=Color.GREEN;
+    private int clientes=0;
+    private int menor;
+    private String indexAnt = "";
+    private int indice;
+    private int selec;
+    private LinkedList <Integer> valorestcServicio=new LinkedList<>();
 
     //captura de datos
     private TextField txtNoCliente;
@@ -40,6 +51,7 @@ public class Procesos extends Stage {
     private TableColumn<String[],String> tcServicio;
     private TableColumn<String[],String> tcTiempoServicio;
     private TableColumn<String[],String> tcTiempoTermina;
+    private TableColumn<String[],String> tcTiempoEspera;
     private HBox hbTablas;
 
 
@@ -69,6 +81,10 @@ public class Procesos extends Stage {
         gdpVista = new GridPane();
         cuadrados();
 
+        //elegir opcion de salida
+        Object[] opciones = {"FIFO", "SALIDA MENOR"};
+        selec = JOptionPane.showOptionDialog(null, "ELIGE LA OPCION DE SALIDA DE DATOS", "Opciones",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, opciones, opciones[0]);
         //casilla de los datos
         txtNoCliente = new TextField();
         txtTiempoLlegada = new TextField();
@@ -76,7 +92,11 @@ public class Procesos extends Stage {
         btnLlegada = new Button("Llegada");
         btnSalida = new Button("Salida");
         btnLlegada.setOnAction(event -> agregarDatos(btnLlegada));
-        btnSalida.setOnAction(event -> agregarTiempos(btnSalida));
+        if(selec==0){
+            btnSalida.setOnAction(event -> agregarTiempos(btnSalida));
+        } else if (selec==1) {
+            btnSalida.setOnAction(event -> agregarTiemposMenor(btnSalida));
+        }
         hbDatos = new HBox(txtNoCliente, txtTiempoLlegada, txtTiempoServicio, btnLlegada, btnSalida);
 
         //tabla Captura de datos
@@ -90,6 +110,7 @@ public class Procesos extends Stage {
         tcServicio = new TableColumn("Tiempo Servicio");
         tcTiempoServicio = new TableColumn("Tiempo Inicio Servicio");
         tcTiempoTermina = new TableColumn("Tiempo Termino Servicio");
+        tcTiempoEspera = new TableColumn("Tiempo Espera");
         tcCliente.setCellValueFactory(param -> {
             return new javafx.beans.property.SimpleStringProperty(param.getValue()[0]);
         });
@@ -105,10 +126,13 @@ public class Procesos extends Stage {
         tcTiempoTermina.setCellValueFactory(param -> {
             return new javafx.beans.property.SimpleStringProperty(param.getValue()[1]);
         });
+        tcTiempoEspera.setCellValueFactory(param -> {
+            return new javafx.beans.property.SimpleStringProperty(param.getValue()[2]);
+        });
         tvTablaCapturas.getColumns().addAll(tcCliente, tcLlegada, tcServicio);
         tvTablaCapturas.setItems(oblDatos);
         //tabla calculo de tiempos
-        tvTiempos.getColumns().addAll(tcTiempoServicio, tcTiempoTermina);
+        tvTiempos.getColumns().addAll(tcTiempoServicio, tcTiempoTermina, tcTiempoEspera);
         tvTiempos.setItems(oblTiempos);
         hbTablas = new HBox(tvTablaCapturas, tvTiempos);
         //calcular operaciones de tiempos y agregarlos
@@ -147,6 +171,7 @@ public class Procesos extends Stage {
             String noCliente = txtNoCliente.getText();
             String tiempoLlegada = txtTiempoLlegada.getText();
             String tiempoServicio = txtTiempoServicio.getText();
+            valorestcServicio.add(Integer.parseInt(tiempoServicio));
 
             //Agregar Datos a la Tabla
             String[] nuevaFila = { noCliente, tiempoLlegada, tiempoServicio };
@@ -173,65 +198,172 @@ public class Procesos extends Stage {
             txtNoCliente.clear();
             txtTiempoLlegada.clear();
             txtTiempoServicio.clear();
-        }
+            clientes++;
+            tvTiempos.getItems().add(new String[]{"","",""});
 
+
+        }
 
     }
     public void agregarTiempos(Button Salida)
     {
         int termino;
-        int boton=1;
+        int espera;
         if (tcTiempoTermina.getCellData(contador-1)==null)
         {
             termino=Integer.parseInt(tcLlegada.getCellData(contador))+Integer.parseInt(tcServicio.getCellData(contador));
-            String[] nuevaFila = {tcLlegada.getCellData(contador),String.valueOf(termino)};
-            oblTiempos.add(nuevaFila);
+            espera=0;
+            String[] nuevaFila = {tcLlegada.getCellData(contador),String.valueOf(termino),String.valueOf(espera)};
+            oblTiempos.set(contador,nuevaFila);
             contador++;
-            if(boton1.getText().equals("OCUPADO"))
+            if(tvTablaCapturas.getItems().size()<=5)
             {
-                boton1.setText("VACIO");
-                boton1.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
-            } else if (boton2.getText().equals("OCUPADO")) {
-                boton2.setText("VACIO");
-                boton2.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
+                if(boton1.getText().equals("OCUPADO"))
+                {
+                    boton1.setText("VACIO");
+                    boton1.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
+                } else if (boton2.getText().equals("OCUPADO")) {
+                    boton2.setText("VACIO");
+                    boton2.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
 
-            } else if (boton3.getText().equals("OCUPADO")) {
-                boton3.setText("VACIO");
-                boton3.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
-            } else if (boton4.getText().equals("OCUPADO")) {
-                boton4.setText("VACIO");
-                boton4.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
-            } else if (boton5.getText().equals("OCUPADO")) {
-                boton5.setText("VACIO");
-                boton5.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
+                } else if (boton3.getText().equals("OCUPADO")) {
+                    boton3.setText("VACIO");
+                    boton3.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
+                } else if (boton4.getText().equals("OCUPADO")) {
+                    boton4.setText("VACIO");
+                    boton4.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
+                } else if (boton5.getText().equals("OCUPADO")) {
+                    boton5.setText("VACIO");
+                    boton5.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
+                }
             }
+
 
         }
         else if(!tcTiempoTermina.getCellData(contador-1).isEmpty())
         {
-            termino=Integer.parseInt(tcTiempoTermina.getCellData(contador-1))+Integer.parseInt(tcServicio.getCellData(contador));
-            String[] nuevaFila = {tcTiempoTermina.getCellData(contador-1),String.valueOf(termino)};
-            oblTiempos.add(nuevaFila);
-            contador++;
-            if(boton1.getText().equals("OCUPADO"))
+            if(Integer.parseInt(tcLlegada.getCellData(contador))<=Integer.parseInt(tcTiempoTermina.getCellData(contador-1)))
             {
+                termino=Integer.parseInt(tcTiempoTermina.getCellData(contador-1))+Integer.parseInt(tcServicio.getCellData(contador));
+                if(Integer.parseInt(tcTiempoTermina.getCellData(contador-1))-Integer.parseInt(tcLlegada.getCellData(contador))<=0){
+                    espera=0;
+                } else {
+                    espera=Integer.parseInt(tcTiempoTermina.getCellData(contador-1))-Integer.parseInt(tcLlegada.getCellData(contador));
+                }
+                String []filacal = {tcTiempoTermina.getCellData(contador - 1), String.valueOf(termino),String.valueOf(espera)};
+                oblTiempos.set(contador,filacal);
+            }
+            else if (Integer.parseInt(tcLlegada.getCellData(contador))>Integer.parseInt(tcTiempoTermina.getCellData(contador-1)))
+            {
+                termino=Integer.parseInt(tcLlegada.getCellData(contador))+Integer.parseInt(tcServicio.getCellData(contador));
+                if(Integer.parseInt(tcTiempoTermina.getCellData(contador-1))-Integer.parseInt(tcLlegada.getCellData(contador))<=0){
+                    espera=0;
+                } else {
+                    espera=Integer.parseInt(tcTiempoTermina.getCellData(contador-1))-Integer.parseInt(tcLlegada.getCellData(contador));
+                }
+                String []filacal = {tcLlegada.getCellData(contador), String.valueOf(termino), String.valueOf(espera)};
+                oblTiempos.set(contador,filacal);
+            }
+            contador++;
+            if (clientes<=6) {
+                if (boton1.getText().equals("OCUPADO")) {
+                    boton1.setText("VACIO");
+                    boton1.setBackground(new Background(new BackgroundFill(colorRojo, null, null)));
+                } else if (boton2.getText().equals("OCUPADO")) {
+                    boton2.setText("VACIO");
+                    boton2.setBackground(new Background(new BackgroundFill(colorRojo, null, null)));
+
+                } else if (boton3.getText().equals("OCUPADO")) {
+                    boton3.setText("VACIO");
+                    boton3.setBackground(new Background(new BackgroundFill(colorRojo, null, null)));
+                } else if (boton4.getText().equals("OCUPADO")) {
+                    boton4.setText("VACIO");
+                    boton4.setBackground(new Background(new BackgroundFill(colorRojo, null, null)));
+                } else if (boton5.getText().equals("OCUPADO")) {
+                    boton5.setText("VACIO");
+                    boton5.setBackground(new Background(new BackgroundFill(colorRojo, null, null)));
+                }
+            }
+            clientes--;
+        }
+    }
+
+    private void agregarTiemposMenor(Button Salida){
+        int termino;
+        int espera;
+        int inicio;
+        if(clientes==0){
+            return;
+        }
+        if (indexAnt.isEmpty()) {
+
+            indexAnt = String.valueOf(0);
+            termino = Integer.parseInt(tcLlegada.getCellData(0)) + Integer.parseInt(tcServicio.getCellData(0));
+            espera = 0;
+            String[] nuevaFila = {tcLlegada.getCellData(0), String.valueOf(termino), String.valueOf(espera)};
+            valorestcServicio.set(0,100);
+            oblTiempos.remove(0);
+            oblTiempos.add(0, nuevaFila);;
+        } else if (!indexAnt.isEmpty()) {
+            buscarMenor();
+            if (Integer.parseInt(tcLlegada.getCellData(indice)) >= Integer.parseInt(tcTiempoTermina.getCellData(Integer.parseInt(indexAnt)))) {
+                termino = Integer.parseInt(tcLlegada.getCellData(indice)) + Integer.parseInt(tcServicio.getCellData(indice));
+                espera = 0;
+                inicio = Integer.parseInt(tcLlegada.getCellData(indice));
+                String[] nuevaFila = {String.valueOf(inicio), String.valueOf(termino), String.valueOf(espera)};
+                oblTiempos.set(indice, nuevaFila);
+                indexAnt = String.valueOf(indice);
+            } else if (Integer.parseInt(tcLlegada.getCellData(indice)) < Integer.parseInt(tcTiempoTermina.getCellData(Integer.parseInt(indexAnt)))) {
+                termino = Integer.parseInt(tcTiempoTermina.getCellData(Integer.parseInt(indexAnt))) + Integer.parseInt(tcServicio.getCellData(indice));
+                espera = Integer.parseInt(tcTiempoTermina.getCellData(Integer.parseInt(indexAnt))) - Integer.parseInt(tcLlegada.getCellData(indice));
+                inicio = Integer.parseInt(tcTiempoTermina.getCellData(Integer.parseInt(indexAnt)));
+                String[] nuevaFila = {String.valueOf(inicio), String.valueOf(termino), String.valueOf(espera)};
+                oblTiempos.set(indice, nuevaFila);
+                indexAnt = String.valueOf(indice);
+            }
+
+
+        }
+        if (clientes<=6) {
+            if (boton1.getText().equals("OCUPADO")) {
                 boton1.setText("VACIO");
-                boton1.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
+                boton1.setBackground(new Background(new BackgroundFill(colorRojo, null, null)));
             } else if (boton2.getText().equals("OCUPADO")) {
                 boton2.setText("VACIO");
-                boton2.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
+                boton2.setBackground(new Background(new BackgroundFill(colorRojo, null, null)));
 
             } else if (boton3.getText().equals("OCUPADO")) {
                 boton3.setText("VACIO");
-                boton3.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
+                boton3.setBackground(new Background(new BackgroundFill(colorRojo, null, null)));
             } else if (boton4.getText().equals("OCUPADO")) {
                 boton4.setText("VACIO");
-                boton4.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
+                boton4.setBackground(new Background(new BackgroundFill(colorRojo, null, null)));
             } else if (boton5.getText().equals("OCUPADO")) {
                 boton5.setText("VACIO");
-                boton5.setBackground(new Background(new BackgroundFill(colorRojo, null,null)));
+                boton5.setBackground(new Background(new BackgroundFill(colorRojo, null, null)));
             }
         }
-
+        clientes--;
+        System.out.println(clientes);
     }
+
+    private void buscarMenor(){
+        if(clientes==0){
+            return;
+        }
+        menor=valorestcServicio.get(0);
+        int salir=0;
+        while (salir < valorestcServicio.size()){
+            int valor1 = valorestcServicio.get(salir);
+            if(valor1 < menor){
+                menor=valor1;
+            }
+            salir++;
+        }
+        if (valorestcServicio.contains(menor)){
+            indice = valorestcServicio.indexOf(menor);
+            valorestcServicio.set(indice,100);
+        }
+    }
+
 }
