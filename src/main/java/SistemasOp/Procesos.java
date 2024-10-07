@@ -1,4 +1,5 @@
 package SistemasOp;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Group;
@@ -34,7 +35,9 @@ public class Procesos extends Stage {
     private String indexAnt = "";
     private int indice;
     private int selec;
+    private int timeSalida;
     private LinkedList <Integer> valorestcServicio=new LinkedList<>();
+    private LinkedList <Integer> valoresServSinLLegar=new LinkedList<>();
 
     //captura de datos
     private TextField txtNoCliente;
@@ -112,22 +115,22 @@ public class Procesos extends Stage {
         tcTiempoTermina = new TableColumn("Tiempo Termino Servicio");
         tcTiempoEspera = new TableColumn("Tiempo Espera");
         tcCliente.setCellValueFactory(param -> {
-            return new javafx.beans.property.SimpleStringProperty(param.getValue()[0]);
+            return new SimpleStringProperty(param.getValue()[0]);
         });
         tcLlegada.setCellValueFactory(param -> {
-            return new javafx.beans.property.SimpleStringProperty(param.getValue()[1]);
+            return new SimpleStringProperty(param.getValue()[1]);
         });
         tcServicio.setCellValueFactory(param -> {
-            return new javafx.beans.property.SimpleStringProperty(param.getValue()[2]);
+            return new SimpleStringProperty(param.getValue()[2]);
         });
         tcTiempoServicio.setCellValueFactory(param -> {
-            return new javafx.beans.property.SimpleStringProperty(param.getValue()[0]);
+            return new SimpleStringProperty(param.getValue()[0]);
         });
         tcTiempoTermina.setCellValueFactory(param -> {
-            return new javafx.beans.property.SimpleStringProperty(param.getValue()[1]);
+            return new SimpleStringProperty(param.getValue()[1]);
         });
         tcTiempoEspera.setCellValueFactory(param -> {
-            return new javafx.beans.property.SimpleStringProperty(param.getValue()[2]);
+            return new SimpleStringProperty(param.getValue()[2]);
         });
         tvTablaCapturas.getColumns().addAll(tcCliente, tcLlegada, tcServicio);
         tvTablaCapturas.setItems(oblDatos);
@@ -171,7 +174,8 @@ public class Procesos extends Stage {
             String noCliente = txtNoCliente.getText();
             String tiempoLlegada = txtTiempoLlegada.getText();
             String tiempoServicio = txtTiempoServicio.getText();
-            valorestcServicio.add(Integer.parseInt(tiempoServicio));
+            valorestcServicio.add(Integer.valueOf(tiempoServicio));
+
 
             //Agregar Datos a la Tabla
             String[] nuevaFila = { noCliente, tiempoLlegada, tiempoServicio };
@@ -285,18 +289,21 @@ public class Procesos extends Stage {
                 }
             }
             clientes--;
+
         }
     }
 
     private void agregarTiemposMenor(Button Salida){
-        int termino;
+
+        int termino = 0;
         int espera;
         int inicio;
+
         if(clientes==0){
             return;
         }
-        if (indexAnt.isEmpty()) {
 
+        if (indexAnt.isEmpty()) {
             indexAnt = String.valueOf(0);
             termino = Integer.parseInt(tcLlegada.getCellData(0)) + Integer.parseInt(tcServicio.getCellData(0));
             espera = 0;
@@ -304,8 +311,14 @@ public class Procesos extends Stage {
             valorestcServicio.set(0,100);
             oblTiempos.remove(0);
             oblTiempos.add(0, nuevaFila);;
+            timeSalida= termino;
+            sacarTiemposNoLlegados();
         } else if (!indexAnt.isEmpty()) {
+
+            insertarTiemposLLegados();
             buscarMenor();
+            InsertarTiempoLejano();
+
             if (Integer.parseInt(tcLlegada.getCellData(indice)) >= Integer.parseInt(tcTiempoTermina.getCellData(Integer.parseInt(indexAnt)))) {
                 termino = Integer.parseInt(tcLlegada.getCellData(indice)) + Integer.parseInt(tcServicio.getCellData(indice));
                 espera = 0;
@@ -321,10 +334,12 @@ public class Procesos extends Stage {
                 oblTiempos.set(indice, nuevaFila);
                 indexAnt = String.valueOf(indice);
             }
-
+            timeSalida= termino;
 
         }
-        if (clientes<=6) {
+
+
+        if (clientes<=5) {
             if (boton1.getText().equals("OCUPADO")) {
                 boton1.setText("VACIO");
                 boton1.setBackground(new Background(new BackgroundFill(colorRojo, null, null)));
@@ -344,13 +359,15 @@ public class Procesos extends Stage {
             }
         }
         clientes--;
-        System.out.println(clientes);
+
+
     }
 
-    private void buscarMenor(){
+    private void buscarMenor() {
         if(clientes==0){
             return;
         }
+
         menor=valorestcServicio.get(0);
         int salir=0;
         while (salir < valorestcServicio.size()){
@@ -365,5 +382,41 @@ public class Procesos extends Stage {
             valorestcServicio.set(indice,100);
         }
     }
+
+    private void sacarTiemposNoLlegados(){
+        int termina = timeSalida;
+        while(valorestcServicio.size() >1){
+            valoresServSinLLegar.addFirst(valorestcServicio.getLast());
+            valorestcServicio.removeLast();
+        }
+    }
+
+    private void insertarTiemposLLegados(){
+        int termina = timeSalida;
+
+        int indice = valorestcServicio.size();
+        while (tcLlegada.getCellData(indice) != null && Integer.parseInt(tcLlegada.getCellData(indice)) <= termina) {
+            valorestcServicio.addLast(valoresServSinLLegar.getFirst());
+            valoresServSinLLegar.removeFirst();
+            indice++;
+        }
+        int cont=0;
+
+    }
+
+    private void InsertarTiempoLejano(){
+        int val100=0;
+        for (int i = 0; i < valorestcServicio.size(); i++) {
+            if(valorestcServicio.get(i) == 100){
+                val100++;
+            }
+        }
+
+        if(!valoresServSinLLegar.isEmpty() && val100==valorestcServicio.size()){
+            valorestcServicio.add(valoresServSinLLegar.getFirst());
+            valoresServSinLLegar.removeFirst();
+        }
+    }
+    
 
 }
